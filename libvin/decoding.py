@@ -5,11 +5,19 @@ libvin - VIN Vehicle information number checker
 """
 
 from libvin.static import *
+from datetime import datetime
 
 
 class Vin(object):
     def __init__(self, vin):
         self.vin = vin.upper()
+
+        # Overwrite is_pre_2010 attribute if it would result in a model year
+        # more than 2 years into the future. See notes in is_pre_2010
+        self._pre_2010_overwrite = False
+        if (not self.is_pre_2010 and
+                YEARS_CODES_PRE_2040[self.vin[9]] >= datetime.now().year + 2):
+            self._pre_2010_overwrite = True
 
     @property
     def country(self):
@@ -32,16 +40,29 @@ class Vin(object):
         """
         Returns true if the model year is in the 1980-2009 range
 
-        In order to identify exact year in passenger cars and multipurpose 
-        passenger vehicles with a GVWR of 10,000 or less, one must read 
-        position 7 as well as position 10. For passenger cars, and for 
-        multipurpose passenger vehicles and trucks with a gross vehicle 
-        weight rating of 10,000 lb (4,500 kg) or less, if position 7 is 
-        numeric, the model year in position 10 of the VIN refers to a year 
-        in the range 1980-2009. If position 7 is alphabetic, the model year 
+        In order to identify exact year in passenger cars and multipurpose
+        passenger vehicles with a GVWR of 10,000 or less, one must read
+        position 7 as well as position 10. For passenger cars, and for
+        multipurpose passenger vehicles and trucks with a gross vehicle
+        weight rating of 10,000 lb (4,500 kg) or less, if position 7 is
+        numeric, the model year in position 10 of the VIN refers to a year
+        in the range 1980-2009. If position 7 is alphabetic, the model year
         in position 10 of VIN refers to a year in the range 2010-2039.
+
+        Vehicles with a GVWR greater than 10,000 lb, buses, motorcycles,
+        trailers, and low-speed vehicles can no longer be identified within
+        a 30-year range. VIN characters 1-8 and 10 that were assigned from
+        1980-2009 can be repeated beginning with the 2010 model year.
+
+        For vehicles with a GVWR over 10,000 lbs the position 7 digit
+        may not indicate whether the vehicle was manufactured prior to 2010.
+        The _pre_2010_overwrite attribute corrects for this by ensuring the
+        model year is not more than 2 years into the future.
         """
-        return self.vin[6].isdigit()
+        if self._pre_2010_overwrite:
+            return True
+        else:
+            return self.vin[6].isdigit()
 
     @property
     def is_valid(self):
@@ -50,25 +71,25 @@ class Vin(object):
         """
         if len(self.vin) != 17:
             """
-            For model years 1981 to present, the VIN is composed of 17 
+            For model years 1981 to present, the VIN is composed of 17
             alphanumeric values
             """
             return False
 
         if any(x in 'IOQ' for x in self.vin):
-            """ 
-            The letters I,O, Q are prohibited from any VIN position 
+            """
+            The letters I,O, Q are prohibited from any VIN position
             """
             return False
 
         if self.vin[9] in 'UZ0':
             """
-            The tenth position of the VIN represents the Model Year and 
-            does not permit the use of the characters U and Z, as well 
+            The tenth position of the VIN represents the Model Year and
+            does not permit the use of the characters U and Z, as well
             as the numeric zero (0)
             """
             return False
-        
+
         products = [VIN_WEIGHT[i] * VIN_TRANSLATION[j] for i, j in enumerate(self.vin)]
         check_digit = sum(products) % 11
         if check_digit == 10:
@@ -76,9 +97,9 @@ class Vin(object):
 
         if self.vin[8] != str(check_digit):
             """
-            The ninth position of the VIN is a calculated value based on 
-            the other 16 alphanumeric values, it's called the 
-            "Check Digit". The result of the check digit can ONLY be a 
+            The ninth position of the VIN is a calculated value based on
+            the other 16 alphanumeric values, it's called the
+            "Check Digit". The result of the check digit can ONLY be a
             numeric 0-9 or letter "X".
             """
             return False
@@ -88,7 +109,7 @@ class Vin(object):
     @property
     def less_than_500_built_per_year(self):
         """
-        A manufacturer who builds fewer than 500 vehicles 
+        A manufacturer who builds fewer than 500 vehicles
         per year uses a 9 as the third digit
         """
         try:
