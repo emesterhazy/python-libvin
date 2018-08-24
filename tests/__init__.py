@@ -496,4 +496,8 @@ TEST_DATA = [
      'MODEL': 'XC60', 'MAKE':  'Volvo', 'YEAR': 2013, 'COUNTRY': 'Sweden',
      'REGION': 'europe', 'SEQUENTIAL_NUMBER': '796335', 'FEWER_THAN_500_PER_YEAR': False},
 
+    # https://www.vindecoderz.com/EN/check-lookup/1FUJGLDR69LAC9984
+    {'VIN': '1FUJGLDR69LAC9984', 'WMI': '1FU', 'VDS': 'JGLDR6', 'VIS': '9LAC9984',
+     'MODEL': 'Cascadia', 'MAKE': 'Freightliner', 'YEAR': 2009, 'COUNTRY': 'United States',
+     'REGION': 'north_america', 'SEQUENTIAL_NUMBER': 'AC9984', 'FEWER_THAN_500_PER_YEAR': False},
 ]
